@@ -7,6 +7,8 @@ import {
   getGameStatus,
   getLegalMoves,
   getPieceAt,
+  getPseudoMoves,
+  isInCheck,
   opposite,
   type Color,
   type GameState,
@@ -39,6 +41,7 @@ interface GameStore {
   activeRune: string | null
   muted: boolean
   aiEngine: 'fairy-stockfish' | 'minimax'
+  aiThinking: boolean
   startNewGame: (mode?: GameMode) => void
   setMode: (mode: GameMode) => void
   setDifficulty: (difficulty: AiDifficulty) => void
@@ -92,6 +95,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   activeRune: null,
   muted: false,
   aiEngine: 'minimax',
+  aiThinking: false,
 
   startNewGame: (mode) =>
     set((current) => ({
@@ -103,6 +107,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       selected: null,
       legalMoves: [],
       activeRune: null,
+      aiThinking: false,
     })),
 
   setMode: (mode) => set({ mode }),
@@ -132,6 +137,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const current = get()
     const state = current.state
     if (state.phase !== 'playing') return
+    if (current.aiThinking) {
+      set({ state: { ...state, message: 'AI 思考中，请稍等。' } })
+      return
+    }
 
     if (current.activeRune) {
       const selected = current.selected
@@ -152,7 +161,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const piece = getPieceAt(state, square)
     if (piece?.color === state.turn) {
-      set({ selected: square, legalMoves: getLegalMoves(state, square), activeRune: null })
+      const legalMoves = getLegalMoves(state, square)
+      const pseudoMoves = getPseudoMoves(state, square)
+      const message =
+        legalMoves.length > 0
+          ? state.message
+          : pseudoMoves.length > 0 || isInCheck(state, state.turn)
+            ? '这枚棋子暂时被牵制，走开会暴露将帅或无法解将。'
+            : piece.type === 'horse'
+              ? '这匹马暂时没有可走点：马腿、边界或己方棋子挡住了。'
+              : '这枚棋子暂时没有合法走法。'
+      set({ state: { ...state, message }, selected: square, legalMoves, activeRune: null })
+      return
+    }
+
+    if (piece && piece.color !== state.turn) {
+      set({ state: { ...state, message: `现在轮到${state.turn === 'red' ? '红方' : '黑方'}。` }, selected: null, legalMoves: [], activeRune: null })
       return
     }
 
@@ -174,44 +198,60 @@ export const useGameStore = create<GameStore>((set, get) => ({
         winner: opposite(current.state.turn),
         message: `${current.state.turn === 'red' ? '红方' : '黑方'}认输`,
       },
+      aiThinking: false,
     })),
 
   undo: () =>
     set((current) => {
       const last = current.state.history.at(-1)
       if (!last) return current
-      return { state: last.stateBefore, selected: null, legalMoves: [], activeRune: null }
+      return { state: last.stateBefore, selected: null, legalMoves: [], activeRune: null, aiThinking: false }
     }),
 
   runAiTurn: () => {
     const current = get()
     if (current.mode !== 'ai' || current.state.phase !== 'playing' || current.state.turn !== 'black') return
     const runeState = maybeUseAiRune(current.state)
+    set({ aiThinking: true, state: { ...runeState, message: 'AI 思考中...' } })
     void chooseFairyStockfishMove(runeState, current.aiDifficulty)
       .then((strongMove) => {
         const latest = get()
-        if (latest.mode !== 'ai' || latest.state.phase !== 'playing' || latest.state.turn !== 'black') return
+        if (latest.mode !== 'ai' || latest.state.phase !== 'playing' || latest.state.turn !== 'black') {
+          set({ aiThinking: false })
+          return
+        }
         const move = strongMove ?? chooseAiMove(runeState, current.aiDifficulty)
-        if (!move) return
+        if (!move) {
+          set({ aiThinking: false })
+          return
+        }
         set({
           state: finalizeStatus(applyMove(runeState, move)),
           selected: null,
           legalMoves: [],
           activeRune: null,
           aiEngine: strongMove ? 'fairy-stockfish' : 'minimax',
+          aiThinking: false,
         })
       })
       .catch(() => {
         const latest = get()
-        if (latest.mode !== 'ai' || latest.state.phase !== 'playing' || latest.state.turn !== 'black') return
+        if (latest.mode !== 'ai' || latest.state.phase !== 'playing' || latest.state.turn !== 'black') {
+          set({ aiThinking: false })
+          return
+        }
         const move = chooseAiMove(runeState, current.aiDifficulty)
-        if (!move) return
+        if (!move) {
+          set({ aiThinking: false })
+          return
+        }
         set({
           state: finalizeStatus(applyMove(runeState, move)),
           selected: null,
           legalMoves: [],
           activeRune: null,
           aiEngine: 'minimax',
+          aiThinking: false,
         })
       })
   },
