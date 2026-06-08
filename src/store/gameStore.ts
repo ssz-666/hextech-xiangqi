@@ -23,6 +23,7 @@ import {
   activateRune,
   applyCoreAugment,
   applyDraftRune,
+  canAffordRune,
   generateCorePool,
   generateDraftPool,
   type CoreAugmentDefinition,
@@ -52,6 +53,7 @@ interface GameStore {
   setDifficulty: (difficulty: AiDifficulty) => void
   pickRune: (runeId: string) => void
   pickCoreAugment: (augmentId: string) => void
+  advanceDraftIfBlocked: () => void
   clickSquare: (square: Square) => void
   activateActiveRune: (runeId: string) => void
   resign: () => void
@@ -80,6 +82,10 @@ function bothDrafted(state: GameState) {
   return state.players.red.runes.length >= RUNE_SLOTS && state.players.black.runes.length >= RUNE_SLOTS
 }
 
+function canPickFromPool(state: GameState, pool: RuneDefinition[], color: Color) {
+  return pool.some((rune) => canAffordRune(state, color, rune))
+}
+
 function beginPlaying(state: GameState): GameState {
   const next = cloneState(state)
   next.phase = 'playing'
@@ -87,6 +93,32 @@ function beginPlaying(state: GameState): GameState {
   next.players.red.energy = Math.min(MAX_ENERGY, next.players.red.energy + 1)
   next.message = '红方先行。'
   return next
+}
+
+function advanceRuneDraft(
+  state: GameState,
+  pool: RuneDefinition[],
+  draftTurn: Color,
+  picksThisTurn: number,
+): { state: GameState; draftTurn: Color; picksThisTurn: number } {
+  if (bothDrafted(state)) return { state: beginPlaying(state), draftTurn, picksThisTurn }
+
+  const redCanPick = canPickFromPool(state, pool, 'red')
+  const blackCanPick = canPickFromPool(state, pool, 'black')
+  if (!redCanPick && !blackCanPick) return { state: beginPlaying(state), draftTurn, picksThisTurn }
+
+  let nextTurn = draftTurn
+  let nextPicksThisTurn = picksThisTurn
+  for (let guard = 0; guard < 4; guard += 1) {
+    if (canPickFromPool(state, pool, nextTurn)) {
+      return { state, draftTurn: nextTurn, picksThisTurn: nextPicksThisTurn }
+    }
+    const next = nextDraftTurn(nextTurn, nextPicksThisTurn)
+    nextTurn = next.draftTurn
+    nextPicksThisTurn = next.picksThisTurn
+  }
+
+  return { state: beginPlaying(state), draftTurn: nextTurn, picksThisTurn: nextPicksThisTurn }
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -154,7 +186,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       draftTurn = next.draftTurn
       picksThisTurn = next.picksThisTurn
     }
-    set({ state: nextState, draftTurn, picksThisTurn })
+    const advanced =
+      nextState.phase === 'draft'
+        ? advanceRuneDraft(nextState, current.draftPool, draftTurn, picksThisTurn)
+        : { state: nextState, draftTurn, picksThisTurn }
+    set(advanced)
+  },
+
+  advanceDraftIfBlocked: () => {
+    const current = get()
+    if (current.state.phase !== 'draft' || current.draftStage !== 'runes') return
+    if (canPickFromPool(current.state, current.draftPool, current.draftTurn)) return
+    set(advanceRuneDraft(current.state, current.draftPool, current.draftTurn, current.picksThisTurn))
   },
 
   clickSquare: (square) => {

@@ -73,7 +73,13 @@ function PlayerPanel({ color }: { color: Color }) {
 }
 
 function DraftScreen() {
-  const { state, draftPool, corePool, draftStage, draftTurn, pickRune, pickCoreAugment } = useGameStore()
+  const { state, draftPool, corePool, draftStage, draftTurn, pickRune, pickCoreAugment, advanceDraftIfBlocked } =
+    useGameStore()
+
+  useEffect(() => {
+    advanceDraftIfBlocked()
+  }, [advanceDraftIfBlocked, draftPool, draftStage, draftTurn, state])
+
   return (
     <section className="hex-panel rounded-lg p-4 lg:p-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
