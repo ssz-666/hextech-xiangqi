@@ -125,64 +125,98 @@ function Board() {
   const activeRune = useGameStore((store) => store.activeRune)
   const clickSquare = useGameStore((store) => store.clickSquare)
   const legalTargets = new Set(legalMoves.map((move) => squareKey(move.to)))
+  const pointStyle = (square: Square) => ({
+    left: `${(square.file / (BOARD_FILES - 1)) * 100}%`,
+    top: `${(square.rank / (BOARD_RANKS - 1)) * 100}%`,
+  })
 
   return (
     <section className="hex-panel board-grid rounded-lg p-3">
-      <div
-        className="relative mx-auto grid aspect-[9/10] w-full max-w-[min(88vw,620px)] overflow-hidden rounded-md border border-hexgold/50 bg-[#102033]"
-        style={{ gridTemplateColumns: `repeat(${BOARD_FILES}, minmax(0, 1fr))` }}
-      >
-        {Array.from({ length: BOARD_RANKS }).flatMap((_, rank) =>
-          Array.from({ length: BOARD_FILES }).map((__, file) => {
-            const square = { file, rank }
-            const piece = getPieceAt(state, square)
-            const isSelected = selected && sameSquare(selected, square)
-            const isLegal = legalTargets.has(squareKey(square))
-            const isPortal = state.modifiers.portals.some((portal) => sameSquare(portal.a, square) || sameSquare(portal.b, square))
-            return (
-              <button
-                key={squareKey(square)}
-                type="button"
-                aria-label={squareName(square)}
-                onClick={() => clickSquare(square)}
-                className={clsx(
-                  'relative flex aspect-square items-center justify-center border border-hexcyan/15',
-                  (file + rank) % 2 === 0 ? 'bg-white/[0.035]' : 'bg-black/[0.09]',
-                  isSelected && 'ring-2 ring-hexgold',
-                  activeRune && 'cursor-crosshair',
-                )}
-              >
-                {rank === 4 && file === 4 && <span className="absolute text-xs text-hexgold/55">楚河</span>}
-                {rank === 5 && file === 4 && <span className="absolute text-xs text-hexgold/55">汉界</span>}
-                {isPortal && <span className="absolute h-7 w-7 rounded-full border border-hexcyan/70 shadow-glow" />}
-                {isLegal && <span className="absolute h-4 w-4 rounded-full bg-hexcyan/60 shadow-glow" />}
-                <AnimatePresence>
-                  {piece && (
-                    <motion.span
-                      layoutId={piece.id}
-                      initial={{ scale: 0.8, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.4, opacity: 0 }}
-                      className={clsx(
-                        'z-10 flex h-[76%] w-[76%] items-center justify-center rounded-full border text-[clamp(1rem,4vw,2rem)] font-bold shadow-lg',
-                        piece.color === 'red'
-                          ? 'border-crimson/80 bg-[#2a1118] text-red-100 shadow-red-950'
-                          : 'border-hexcyan/80 bg-[#071827] text-cyan-100 shadow-cyan-950',
-                      )}
-                    >
-                      {pieceLabels[piece.color][piece.type]}
-                      {piece.shield ? (
-                        <span className="absolute -right-1 -top-1 rounded-full bg-hexgold px-1 text-xs text-void">
-                          {piece.shield}
-                        </span>
-                      ) : null}
-                    </motion.span>
+      <div className="relative mx-auto aspect-[9/10] w-full max-w-[min(88vw,620px)] rounded-md border border-hexgold/50 bg-[#102033] p-[clamp(18px,4.2vw,38px)]">
+        <div className="relative h-full w-full">
+          <div className="pointer-events-none absolute inset-0">
+            {Array.from({ length: BOARD_RANKS }).map((_, rank) => (
+              <span
+                key={`h-${rank}`}
+                className="absolute left-0 h-px w-full bg-hexcyan/45 shadow-[0_0_10px_rgba(10,200,185,0.22)]"
+                style={{ top: `${(rank / (BOARD_RANKS - 1)) * 100}%` }}
+              />
+            ))}
+            {Array.from({ length: BOARD_FILES }).map((_, file) => {
+              const left = `${(file / (BOARD_FILES - 1)) * 100}%`
+              const isEdge = file === 0 || file === BOARD_FILES - 1
+              return isEdge ? (
+                <span
+                  key={`v-${file}`}
+                  className="absolute top-0 h-full w-px bg-hexcyan/45 shadow-[0_0_10px_rgba(10,200,185,0.22)]"
+                  style={{ left }}
+                />
+              ) : (
+                <span key={`v-${file}`} className="absolute top-0 h-full w-px" style={{ left }}>
+                  <span className="absolute top-0 block h-[44.5%] w-px bg-hexcyan/45 shadow-[0_0_10px_rgba(10,200,185,0.22)]" />
+                  <span className="absolute bottom-0 block h-[44.5%] w-px bg-hexcyan/45 shadow-[0_0_10px_rgba(10,200,185,0.22)]" />
+                </span>
+              )
+            })}
+            <svg className="absolute inset-0 h-full w-full overflow-visible" viewBox="0 0 8 9" preserveAspectRatio="none">
+              <path d="M3 0 L5 2 M5 0 L3 2 M3 7 L5 9 M5 7 L3 9" stroke="rgba(200,170,110,.55)" strokeWidth="0.035" />
+            </svg>
+            <div className="absolute left-0 right-0 top-1/2 flex -translate-y-1/2 justify-center gap-[18%] bg-[#102033]/85 py-1 font-display text-sm tracking-[0.3em] text-hexgold/65">
+              <span>楚河</span>
+              <span>汉界</span>
+            </div>
+          </div>
+          {Array.from({ length: BOARD_RANKS }).flatMap((_, rank) =>
+            Array.from({ length: BOARD_FILES }).map((__, file) => {
+              const square = { file, rank }
+              const piece = getPieceAt(state, square)
+              const isSelected = selected && sameSquare(selected, square)
+              const isLegal = legalTargets.has(squareKey(square))
+              const isPortal = state.modifiers.portals.some((portal) => sameSquare(portal.a, square) || sameSquare(portal.b, square))
+              return (
+                <button
+                  key={squareKey(square)}
+                  type="button"
+                  aria-label={squareName(square)}
+                  onClick={() => clickSquare(square)}
+                  style={pointStyle(square)}
+                  className={clsx(
+                    'absolute z-10 flex h-[clamp(34px,8.8vw,58px)] w-[clamp(34px,8.8vw,58px)] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full',
+                    'focus:outline-none focus:ring-2 focus:ring-hexgold/80',
+                    isSelected && 'ring-2 ring-hexgold shadow-gold',
+                    activeRune && 'cursor-crosshair',
                   )}
-                </AnimatePresence>
-              </button>
-            )
-          }),
-        )}
+                >
+                  {isPortal && <span className="absolute h-7 w-7 rounded-full border border-hexcyan/70 shadow-glow" />}
+                  {isLegal && <span className="absolute h-4 w-4 rounded-full bg-hexcyan/60 shadow-glow" />}
+                  <AnimatePresence>
+                    {piece && (
+                      <motion.span
+                        layoutId={piece.id}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.4, opacity: 0 }}
+                        className={clsx(
+                          'z-10 flex h-[92%] w-[92%] items-center justify-center rounded-full border text-[clamp(1rem,4vw,2rem)] font-bold shadow-lg',
+                          piece.color === 'red'
+                            ? 'border-crimson/80 bg-[#2a1118] text-red-100 shadow-red-950'
+                            : 'border-hexcyan/80 bg-[#071827] text-cyan-100 shadow-cyan-950',
+                        )}
+                      >
+                        {pieceLabels[piece.color][piece.type]}
+                        {piece.shield ? (
+                          <span className="absolute -right-1 -top-1 rounded-full bg-hexgold px-1 text-xs text-void">
+                            {piece.shield}
+                          </span>
+                        ) : null}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </button>
+              )
+            }),
+          )}
+        </div>
       </div>
     </section>
   )
