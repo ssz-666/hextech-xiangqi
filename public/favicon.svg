@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#07111f"/>
+  <path d="M32 6 55 19v26L32 58 9 45V19z" fill="none" stroke="#0ac8b9" stroke-width="4"/>
+  <text x="32" y="41" text-anchor="middle" font-size="26" font-family="serif" font-weight="700" fill="#c8aa6e">棋</text>
+</svg>

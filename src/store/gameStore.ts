@@ -1,0 +1,191 @@
+import { create } from 'zustand'
+import {
+  MAX_ENERGY,
+  applyMove,
+  cloneState,
+  createInitialState,
+  getGameStatus,
+  getLegalMoves,
+  getPieceAt,
+  opposite,
+  type Color,
+  type GameState,
+  type Move,
+  type Square,
+} from '../engine'
+import { chooseAiMove, maybeUseAiRune, type AiDifficulty } from '../ai/minimax'
+import {
+  DRAFT_POOL_SIZE,
+  RUNE_SLOTS,
+  activateRune,
+  applyDraftRune,
+  generateDraftPool,
+  runeById,
+  type RuneDefinition,
+} from '../runes'
+
+export type GameMode = 'hotseat' | 'ai'
+
+interface GameStore {
+  state: GameState
+  draftPool: RuneDefinition[]
+  draftTurn: Color
+  picksThisTurn: number
+  mode: GameMode
+  aiDifficulty: AiDifficulty
+  selected: Square | null
+  legalMoves: Move[]
+  activeRune: string | null
+  muted: boolean
+  startNewGame: (mode?: GameMode) => void
+  setMode: (mode: GameMode) => void
+  setDifficulty: (difficulty: AiDifficulty) => void
+  pickRune: (runeId: string) => void
+  clickSquare: (square: Square) => void
+  activateActiveRune: (runeId: string) => void
+  resign: () => void
+  undo: () => void
+  toggleMute: () => void
+  runAiTurn: () => void
+}
+
+function finalizeStatus(state: GameState): GameState {
+  const status = getGameStatus(state)
+  return {
+    ...state,
+    result: status.result,
+    winner: status.winner,
+    message: status.message,
+    phase: status.result === 'checkmate' || status.result === 'stalemate' ? 'ended' : state.phase,
+  }
+}
+
+function nextDraftTurn(current: Color, picksThisTurn: number) {
+  if (picksThisTurn === 0) return { draftTurn: opposite(current), picksThisTurn: 1 }
+  return { draftTurn: opposite(current), picksThisTurn: 0 }
+}
+
+function bothDrafted(state: GameState) {
+  return state.players.red.runes.length >= RUNE_SLOTS && state.players.black.runes.length >= RUNE_SLOTS
+}
+
+function beginPlaying(state: GameState): GameState {
+  const next = cloneState(state)
+  next.phase = 'playing'
+  next.turn = 'red'
+  next.players.red.energy = Math.min(MAX_ENERGY, next.players.red.energy + 1)
+  next.message = '红方先行。'
+  return next
+}
+
+export const useGameStore = create<GameStore>((set, get) => ({
+  state: createInitialState(),
+  draftPool: generateDraftPool(20260608, DRAFT_POOL_SIZE),
+  draftTurn: 'red',
+  picksThisTurn: 0,
+  mode: 'ai',
+  aiDifficulty: 'normal',
+  selected: null,
+  legalMoves: [],
+  activeRune: null,
+  muted: false,
+
+  startNewGame: (mode) =>
+    set((current) => ({
+      state: createInitialState(),
+      draftPool: generateDraftPool(Date.now(), DRAFT_POOL_SIZE),
+      draftTurn: 'red',
+      picksThisTurn: 0,
+      mode: mode ?? current.mode,
+      selected: null,
+      legalMoves: [],
+      activeRune: null,
+    })),
+
+  setMode: (mode) => set({ mode }),
+  setDifficulty: (aiDifficulty) => set({ aiDifficulty }),
+  toggleMute: () => set((state) => ({ muted: !state.muted })),
+
+  pickRune: (runeId) => {
+    const current = get()
+    if (current.state.phase !== 'draft') return
+    const rune = runeById[runeId]
+    if (!rune) return
+    let nextState = applyDraftRune(current.state, current.draftTurn, runeId)
+    if (nextState === current.state) return
+    let draftTurn = current.draftTurn
+    let picksThisTurn = current.picksThisTurn
+    if (bothDrafted(nextState)) {
+      nextState = beginPlaying(nextState)
+    } else {
+      const next = nextDraftTurn(current.draftTurn, current.picksThisTurn)
+      draftTurn = next.draftTurn
+      picksThisTurn = next.picksThisTurn
+    }
+    set({ state: nextState, draftTurn, picksThisTurn })
+  },
+
+  clickSquare: (square) => {
+    const current = get()
+    const state = current.state
+    if (state.phase !== 'playing') return
+
+    if (current.activeRune) {
+      const selected = current.selected
+      const nextState = activateRune(state, current.activeRune, {
+        color: state.turn,
+        target: selected ?? square,
+        secondaryTarget: selected ? square : undefined,
+      })
+      set({ state: finalizeStatus(nextState), selected: null, legalMoves: [], activeRune: null })
+      return
+    }
+
+    const chosenMove = current.legalMoves.find((move) => move.to.file === square.file && move.to.rank === square.rank)
+    if (chosenMove) {
+      set({ state: finalizeStatus(applyMove(state, chosenMove)), selected: null, legalMoves: [] })
+      return
+    }
+
+    const piece = getPieceAt(state, square)
+    if (piece?.color === state.turn) {
+      set({ selected: square, legalMoves: getLegalMoves(state, square), activeRune: null })
+      return
+    }
+
+    set({ selected: null, legalMoves: [], activeRune: null })
+  },
+
+  activateActiveRune: (runeId) => {
+    const rune = runeById[runeId]
+    if (!rune || rune.type !== 'active') return
+    set({ activeRune: runeId, selected: null, legalMoves: [] })
+  },
+
+  resign: () =>
+    set((current) => ({
+      state: {
+        ...current.state,
+        phase: 'ended',
+        result: 'resigned',
+        winner: opposite(current.state.turn),
+        message: `${current.state.turn === 'red' ? '红方' : '黑方'}认输`,
+      },
+    })),
+
+  undo: () =>
+    set((current) => {
+      const last = current.state.history.at(-1)
+      if (!last) return current
+      return { state: last.stateBefore, selected: null, legalMoves: [], activeRune: null }
+    }),
+
+  runAiTurn: () => {
+    const current = get()
+    if (current.mode !== 'ai' || current.state.phase !== 'playing' || current.state.turn !== 'black') return
+    const runeState = maybeUseAiRune(current.state)
+    const move = chooseAiMove(runeState, current.aiDifficulty)
+    if (!move) return
+    set({ state: finalizeStatus(applyMove(runeState, move)), selected: null, legalMoves: [], activeRune: null })
+  },
+}))
