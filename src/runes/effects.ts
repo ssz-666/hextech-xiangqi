@@ -215,10 +215,20 @@ function activateTeleport(state: GameState, runeId: string, context: RuneContext
 export function suggestAiRune(state: GameState, color: Color): GameState {
   const affordable = state.players[color].runes
     .map((id) => runeById[id])
-    .filter((rune) => rune.type === 'active' && (rune.energyCost ?? 0) <= state.players[color].energy)
+    .filter((rune) => rune.type === 'active' && Math.max(1, (rune.energyCost ?? 0) - (state.players[color].coreAugment === 'hundred-schools' ? 1 : 0)) <= state.players[color].energy)
+  if (affordable.some((rune) => rune.id === 'dead-return') && state.players[color].captured.some((piece) => piece.type === 'soldier')) {
+    const next = activateRune(state, 'dead-return', { color })
+    if (next !== state) return next
+  }
   if (affordable.some((rune) => rune.id === 'rune-shield')) {
     const threatened = allLegalMoves({ ...state, turn: color === 'red' ? 'black' : 'red' }).find((move) => move.captured?.color === color)
     if (threatened?.to) return activateRune(state, 'rune-shield', { color, target: threatened.to })
+  }
+  if (affordable.some((rune) => rune.id === 'tiger-tally')) {
+    const threatenedMajor = allLegalMoves({ ...state, turn: color === 'red' ? 'black' : 'red' }).find(
+      (move) => move.captured?.color === color && ['chariot', 'horse', 'cannon'].includes(move.captured.type),
+    )
+    if (threatenedMajor?.to) return activateRune(state, 'tiger-tally', { color, target: threatenedMajor.to })
   }
   return state
 }

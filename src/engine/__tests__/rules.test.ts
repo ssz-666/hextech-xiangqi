@@ -13,7 +13,7 @@ import {
 } from '..'
 import { applyDraftRune, generateDraftPool, RUNE_BUDGET, RUNE_SLOTS } from '../../runes'
 import { applyCoreAugment, coreAugments, generateCorePool } from '../../runes'
-import { chooseAiMove } from '../../ai/minimax'
+import { chooseAiMove, evaluateHexState } from '../../ai/minimax'
 import { toXiangqiFen } from '../../ai/fairyStockfish'
 
 function piece(id: string, color: 'red' | 'black', type: Piece['type']): Piece {
@@ -268,6 +268,24 @@ describe('runes and AI', () => {
     expect(move).toBeTruthy()
     expect(allLegalMoves(state).some((legal) => legal.notation === move?.notation)).toBe(true)
     if (move) expect(applyMove(state, move).turn).toBe('black')
+  })
+
+  it('scores hextech resources instead of only traditional material', () => {
+    const baseline = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [0, 9, piece('r', 'red', 'chariot')],
+      [0, 0, piece('br', 'black', 'chariot')],
+    )
+    baseline.players.red.runes = ['rune-shield', 'tiger-tally']
+    baseline.players.red.energy = 3
+
+    const trained = applyCoreAugment(baseline, 'red', 'dujiangyan')
+    trained.board[9][0]!.shield = 1
+    trained.modifiers.portals.push({ a: { file: 0, rank: 5 }, b: { file: 8, rank: 4 } })
+
+    expect(evaluateHexState(trained, 'red')).toBeGreaterThan(evaluateHexState(baseline, 'red') + 200)
   })
 
   it('exports Xiangqi FEN for Fairy-Stockfish', () => {

@@ -15,7 +15,7 @@ import {
   type Move,
   type Square,
 } from '../engine'
-import { chooseAiMove, maybeUseAiRune, type AiDifficulty } from '../ai/minimax'
+import { chooseAiMove, chooseHexAwareMove, maybeUseAiRune, type AiDifficulty } from '../ai/minimax'
 import { chooseFairyStockfishMove } from '../ai/fairyStockfish'
 import {
   DRAFT_POOL_SIZE,
@@ -299,7 +299,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           set({ aiThinking: false })
           return
         }
-        const move = strongMove ?? chooseAiMove(runeState, current.aiDifficulty)
+        const move = strongMove ? chooseHexAwareMove(runeState, current.aiDifficulty, strongMove) : chooseAiMove(runeState, current.aiDifficulty)
         if (!move) {
           set({ aiThinking: false })
           return
