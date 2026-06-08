@@ -12,7 +12,7 @@ import {
   type Piece,
 } from '..'
 import { applyDraftRune, generateDraftPool, RUNE_BUDGET, RUNE_SLOTS } from '../../runes'
-import { applyCoreAugment, generateCorePool } from '../../runes'
+import { applyCoreAugment, coreAugments, generateCorePool } from '../../runes'
 import { chooseAiMove } from '../../ai/minimax'
 import { toXiangqiFen } from '../../ai/fairyStockfish'
 
@@ -141,6 +141,7 @@ describe('runes and AI', () => {
   it('offers three mirrored global core augments', () => {
     const pool = generateCorePool(99)
     expect(pool).toHaveLength(3)
+    expect(coreAugments.length).toBeGreaterThan(12)
     expect(generateCorePool(99).map((augment) => augment.id)).toEqual(pool.map((augment) => augment.id))
   })
 
@@ -185,6 +186,51 @@ describe('runes and AI', () => {
     state = applyDraftRune(state, 'red', 'yue-family-guard')
     expect(getLegalMoves(state, { file: 4, rank: 4 }).some((move) => move.to.file === 3 && move.to.rank === 3)).toBe(true)
     expect(getLegalMoves(state, { file: 4, rank: 8 }).some((move) => move.to.file === 4 && move.to.rank === 7)).toBe(true)
+  })
+
+  it('applies expanded global core augments', () => {
+    let state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [4, 6, piece('s', 'red', 'soldier')],
+      [4, 7, piece('c', 'red', 'cannon')],
+      [2, 9, piece('e', 'red', 'elephant')],
+      [0, 9, piece('r', 'red', 'chariot')],
+      [1, 7, piece('c2', 'red', 'cannon')],
+    )
+    state = applyCoreAugment(state, 'red', 'well-field-system')
+    expect(getLegalMoves(state, { file: 4, rank: 6 }).some((move) => move.to.file === 3 && move.to.rank === 6)).toBe(true)
+
+    state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [4, 7, piece('c', 'red', 'cannon')],
+    )
+    state = applyCoreAugment(state, 'red', 'crossbow-commandery')
+    expect(getLegalMoves(state, { file: 4, rank: 7 }).some((move) => move.to.file === 3 && move.to.rank === 6)).toBe(true)
+
+    state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [2, 5, piece('e', 'red', 'elephant')],
+      [1, 4, piece('block', 'red', 'soldier')],
+    )
+    state = applyCoreAugment(state, 'red', 'yumen-pass')
+    expect(getLegalMoves(state, { file: 2, rank: 5 }).some((move) => move.to.file === 0 && move.to.rank === 3)).toBe(false)
+    state.board[4][1] = null
+    expect(getLegalMoves(state, { file: 2, rank: 5 }).some((move) => move.to.file === 0 && move.to.rank === 3)).toBe(true)
+
+    state = createInitialState()
+    state = applyCoreAugment(state, 'red', 'imperial-arsenal')
+    expect(state.board[9][0]?.shield).toBe(1)
+    expect(state.board[7][1]?.shield).toBe(1)
+
+    state = createInitialState()
+    state = applyCoreAugment(state, 'red', 'nine-province-map')
+    expect(state.modifiers.portals).toContainEqual({ a: { file: 0, rank: 5 }, b: { file: 8, rank: 4 } })
   })
 
   it('applies new shield and energy runes', () => {

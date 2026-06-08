@@ -38,6 +38,8 @@ export function applyCoreAugment(state: GameState, color: Color, augmentId: stri
   next.players[color].coreAugment = augmentId
   if (augmentId === 'golden-aegis') shieldPalaceCore(next, color)
   if (augmentId === 'great-wall-beacons') shieldPieces(next, color, ['soldier'])
+  if (augmentId === 'imperial-arsenal') shieldPieces(next, color, ['chariot', 'cannon'])
+  if (augmentId === 'yumen-pass') next.modifiers.elephantRiftFiles[color] = [0, 8]
   if (augmentId === 'warring-states') next.players[color].energy = Math.min(MAX_ENERGY, next.players[color].energy + 2)
   if (augmentId === 'singularity-gates') {
     const existing = next.modifiers.portals.some((portal) => portal.a.file === 2 && portal.a.rank === 4)
@@ -50,15 +52,19 @@ export function applyCoreAugment(state: GameState, color: Color, augmentId: stri
     const existing = next.modifiers.portals.some((portal) => portal.a.file === 0 && portal.a.rank === 4)
     if (!existing) next.modifiers.portals.push({ a: { file: 0, rank: 4 }, b: { file: 8, rank: 5 } })
   }
+  if (augmentId === 'nine-province-map') {
+    const existing = next.modifiers.portals.some((portal) => portal.a.file === 0 && portal.a.rank === 5)
+    if (!existing) next.modifiers.portals.push({ a: { file: 0, rank: 5 }, b: { file: 8, rank: 4 } })
+  }
   if (augmentId === 'chrono-storm') next.modifiers.chronoStorm = true
   return next
 }
 
-function shieldPieces(state: GameState, color: Color, types: Array<'soldier' | 'chariot'>) {
+function shieldPieces(state: GameState, color: Color, types: Array<'soldier' | 'chariot' | 'cannon'>) {
   for (let rank = 0; rank < 10; rank += 1) {
     for (let file = 0; file < 9; file += 1) {
       const piece = state.board[rank][file]
-      if (piece?.color === color && types.includes(piece.type as 'soldier' | 'chariot')) {
+      if (piece?.color === color && types.includes(piece.type as 'soldier' | 'chariot' | 'cannon')) {
         piece.shield = (piece.shield ?? 0) + 1
       }
     }

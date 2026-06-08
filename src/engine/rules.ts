@@ -41,6 +41,10 @@ function pushIfAvailable(state: GameState, from: Square, to: Square, piece: Piec
   if (!target || target.color !== piece.color) moves.push(makeMove(state, from, to, piece))
 }
 
+function pushIfEmpty(state: GameState, from: Square, to: Square, piece: Piece, moves: Move[]) {
+  if (inBounds(to) && !getPieceAt(state, to)) moves.push(makeMove(state, from, to, piece))
+}
+
 function rayMoves(state: GameState, from: Square, piece: Piece, cannon = false): Move[] {
   const moves: Move[] = []
   for (const [df, dr] of orthogonal) {
@@ -80,7 +84,19 @@ export function getPseudoMoves(state: GameState, from: Square): Move[] {
   let moves: Move[] = []
 
   if (piece.type === 'chariot') moves = rayMoves(state, from, piece)
-  if (piece.type === 'cannon') moves = rayMoves(state, from, piece, true)
+  if (piece.type === 'cannon') {
+    moves = rayMoves(state, from, piece, true)
+    if (state.players[piece.color].coreAugment === 'crossbow-commandery') {
+      for (const [df, dr] of [
+        [1, 1],
+        [1, -1],
+        [-1, 1],
+        [-1, -1],
+      ]) {
+        pushIfEmpty(state, from, { file: from.file + df, rank: from.rank + dr }, piece, moves)
+      }
+    }
+  }
 
   if (piece.type === 'general') {
     for (const [df, dr] of orthogonal) {
@@ -156,6 +172,9 @@ export function getPseudoMoves(state: GameState, from: Square): Move[] {
         pushIfAvailable(state, from, { file: from.file - 1, rank: from.rank + forward }, piece, moves)
         pushIfAvailable(state, from, { file: from.file + 1, rank: from.rank + forward }, piece, moves)
       }
+    } else if (state.players[piece.color].coreAugment === 'well-field-system') {
+      pushIfAvailable(state, from, { file: from.file - 1, rank: from.rank }, piece, moves)
+      pushIfAvailable(state, from, { file: from.file + 1, rank: from.rank }, piece, moves)
     }
   }
 
@@ -259,6 +278,9 @@ export function applyMove(state: GameState, move: Move): GameState {
   next.turn = opposite(state.turn)
   next.moveNumber = state.turn === 'black' ? state.moveNumber + 1 : state.moveNumber
   next.players[next.turn].energy = Math.min(MAX_ENERGY, next.players[next.turn].energy + 1)
+  if (next.players[next.turn].coreAugment === 'dujiangyan' && next.players[next.turn].energy <= 4) {
+    next.players[next.turn].energy = Math.min(MAX_ENERGY, next.players[next.turn].energy + 1)
+  }
   if (next.hooks?.afterApplyMove) next = next.hooks.afterApplyMove(next, move)
   if (next.hooks?.onTurnStart) next = next.hooks.onTurnStart(next, next.turn)
   return next

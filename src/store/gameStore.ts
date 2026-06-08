@@ -91,6 +91,9 @@ function beginPlaying(state: GameState): GameState {
   next.phase = 'playing'
   next.turn = 'red'
   next.players.red.energy = Math.min(MAX_ENERGY, next.players.red.energy + 1)
+  if (next.players.red.coreAugment === 'dujiangyan' && next.players.red.energy <= 4) {
+    next.players.red.energy = Math.min(MAX_ENERGY, next.players.red.energy + 1)
+  }
   next.message = '红方先行。'
   return next
 }
@@ -123,8 +126,8 @@ function advanceRuneDraft(
 
 export const useGameStore = create<GameStore>((set, get) => ({
   state: createInitialState(),
-  draftPool: generateDraftPool(20260608, DRAFT_POOL_SIZE),
-  corePool: generateCorePool(20260608),
+  draftPool: generateDraftPool(Date.now(), DRAFT_POOL_SIZE),
+  corePool: generateCorePool(Date.now()),
   draftStage: 'core',
   draftTurn: 'red',
   picksThisTurn: 0,
