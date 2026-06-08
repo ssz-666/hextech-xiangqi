@@ -168,6 +168,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     if (current.activeRune) {
       const selected = current.selected
+      const needsTwoTargets = ['chrono-swap', 'hex-teleport', 'sun-bin-feint'].includes(current.activeRune)
+      if (needsTwoTargets && !selected) {
+        set({
+          state: { ...state, message: '已选定第一目标，请再选择第二目标。' },
+          selected: square,
+          legalMoves: [],
+        })
+        return
+      }
       const nextState = activateRune(state, current.activeRune, {
         color: state.turn,
         target: selected ?? square,

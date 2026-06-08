@@ -169,6 +169,9 @@ function Board() {
   const activeRune = useGameStore((store) => store.activeRune)
   const clickSquare = useGameStore((store) => store.clickSquare)
   const legalTargets = new Set(legalMoves.map((move) => squareKey(move.to)))
+  const lastMove = state.history.at(-1)
+  const captureEffect = lastMove?.captured ? lastMove : null
+  const checkEffect = state.result === 'check' || state.result === 'checkmate'
   const pointStyle = (square: Square) => ({
     left: `${(square.file / (BOARD_FILES - 1)) * 100}%`,
     top: `${(square.rank / (BOARD_RANKS - 1)) * 100}%`,
@@ -260,6 +263,35 @@ function Board() {
               )
             }),
           )}
+          <AnimatePresence>
+            {captureEffect && (
+              <motion.div
+                key={`${captureEffect.notation}-${state.history.length}`}
+                className="pointer-events-none absolute z-30 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-hexgold/80 bg-hexgold/15 text-sm font-bold text-hexgold shadow-gold"
+                style={pointStyle(captureEffect.to)}
+                initial={{ scale: 0.45, opacity: 0, rotate: -18 }}
+                animate={{ scale: [0.55, 1.35, 1], opacity: [0, 1, 0], rotate: 8 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.9, ease: 'easeOut' }}
+              >
+                斩获
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <AnimatePresence>
+            {checkEffect && (
+              <motion.div
+                key={`check-${state.history.length}-${state.result}`}
+                className="pointer-events-none absolute left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded border border-crimson/80 bg-[#2a1118]/90 px-8 py-3 font-display text-3xl text-red-100 shadow-[0_0_32px_rgba(211,75,84,0.45)]"
+                initial={{ opacity: 0, scale: 0.8, y: 8 }}
+                animate={{ opacity: [0, 1, 1, 0], scale: [0.8, 1.08, 1, 1], y: [8, 0, 0, -4] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.3, ease: 'easeOut' }}
+              >
+                将军
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </section>

@@ -90,12 +90,16 @@ export function getPseudoMoves(state: GameState, from: Square): Move[] {
   }
 
   if (piece.type === 'advisor') {
-    for (const [df, dr] of [
+    const advisorSteps = [
       [1, 1],
       [1, -1],
       [-1, 1],
       [-1, -1],
-    ]) {
+    ]
+    if (state.players[piece.color].runes.includes('yue-family-guard')) {
+      advisorSteps.push([0, 1], [0, -1], [1, 0], [-1, 0])
+    }
+    for (const [df, dr] of advisorSteps) {
       const to = { file: from.file + df, rank: from.rank + dr }
       if (palace(piece.color, to)) pushIfAvailable(state, from, to, piece, moves)
     }
@@ -147,6 +151,10 @@ export function getPseudoMoves(state: GameState, from: Square): Move[] {
       pushIfAvailable(state, from, { file: from.file + 1, rank: from.rank }, piece, moves)
       if (state.players[piece.color].runes.includes('reverse-soldier')) {
         pushIfAvailable(state, from, { file: from.file, rank: from.rank - forward }, piece, moves)
+      }
+      if (state.players[piece.color].runes.includes('fire-ox-array')) {
+        pushIfAvailable(state, from, { file: from.file - 1, rank: from.rank + forward }, piece, moves)
+        pushIfAvailable(state, from, { file: from.file + 1, rank: from.rank + forward }, piece, moves)
       }
     }
   }
@@ -230,6 +238,9 @@ export function applyMove(state: GameState, move: Move): GameState {
         moving.type === 'soldier' &&
         ((moving.color === 'red' && move.from.rank <= 4) || (moving.color === 'black' && move.from.rank >= 5))
       ) {
+        next.players[moving.color].energy = Math.min(MAX_ENERGY, next.players[moving.color].energy + 1)
+      }
+      if (moving.type === 'horse' && next.players[moving.color].runes.includes('white-horse-raiders')) {
         next.players[moving.color].energy = Math.min(MAX_ENERGY, next.players[moving.color].energy + 1)
       }
       if (

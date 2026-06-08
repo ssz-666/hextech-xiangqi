@@ -173,9 +173,41 @@ describe('runes and AI', () => {
     expect(next.board[0].some((piece) => piece?.id === 'target')).toBe(true)
   })
 
+  it('adds historical-style movement augments for soldiers and advisors', () => {
+    let state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [4, 4, piece('s', 'red', 'soldier')],
+      [4, 8, piece('a', 'red', 'advisor')],
+    )
+    state = applyDraftRune(state, 'red', 'fire-ox-array')
+    state = applyDraftRune(state, 'red', 'yue-family-guard')
+    expect(getLegalMoves(state, { file: 4, rank: 4 }).some((move) => move.to.file === 3 && move.to.rank === 3)).toBe(true)
+    expect(getLegalMoves(state, { file: 4, rank: 8 }).some((move) => move.to.file === 4 && move.to.rank === 7)).toBe(true)
+  })
+
+  it('applies new shield and energy runes', () => {
+    let state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [3, 5, piece('h', 'red', 'horse')],
+      [4, 3, piece('target', 'black', 'soldier')],
+      [0, 9, piece('r', 'red', 'chariot')],
+    )
+    state = applyDraftRune(state, 'red', 'mozi-city')
+    state = applyDraftRune(state, 'red', 'white-horse-raiders')
+    expect(state.board[9][0]?.shield).toBe(1)
+    const move = getLegalMoves(state, { file: 3, rank: 5 }).find((candidate) => candidate.to.file === 4 && candidate.to.rank === 3)
+    expect(move).toBeTruthy()
+    const next = applyMove(state, move!)
+    expect(next.players.red.energy).toBe(1)
+  })
+
   it('generates a mirrored draft pool and respects budget', () => {
     const pool = generateDraftPool(42)
-    expect(pool).toHaveLength(8)
+    expect(pool).toHaveLength(9)
     const state = createInitialState()
     let next = state
     for (const rune of pool.slice(0, RUNE_SLOTS)) next = applyDraftRune(next, 'red', rune.id)

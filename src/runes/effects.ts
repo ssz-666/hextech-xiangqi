@@ -26,6 +26,7 @@ export function applyDraftRune(state: GameState, color: Color, runeId: string): 
   if (runeId === 'golden-capacitor') next.players[color].energy = Math.min(MAX_ENERGY, next.players[color].energy + 1)
   if (runeId === 'prism-core') next.players[color].energy = Math.min(MAX_ENERGY, next.players[color].energy + 2)
   if (runeId === 'last-stand') shieldGeneral(next, color)
+  if (runeId === 'mozi-city') shieldPieces(next, color, ['chariot'])
 
   return next
 }
@@ -36,6 +37,8 @@ export function applyCoreAugment(state: GameState, color: Color, augmentId: stri
   const next = cloneState(state)
   next.players[color].coreAugment = augmentId
   if (augmentId === 'golden-aegis') shieldPalaceCore(next, color)
+  if (augmentId === 'great-wall-beacons') shieldPieces(next, color, ['soldier'])
+  if (augmentId === 'warring-states') next.players[color].energy = Math.min(MAX_ENERGY, next.players[color].energy + 2)
   if (augmentId === 'singularity-gates') {
     const existing = next.modifiers.portals.some((portal) => portal.a.file === 2 && portal.a.rank === 4)
     if (!existing) {
@@ -43,8 +46,23 @@ export function applyCoreAugment(state: GameState, color: Color, augmentId: stri
       next.modifiers.portals.push({ a: { file: 6, rank: 4 }, b: { file: 2, rank: 5 } })
     }
   }
+  if (augmentId === 'royal-road') {
+    const existing = next.modifiers.portals.some((portal) => portal.a.file === 0 && portal.a.rank === 4)
+    if (!existing) next.modifiers.portals.push({ a: { file: 0, rank: 4 }, b: { file: 8, rank: 5 } })
+  }
   if (augmentId === 'chrono-storm') next.modifiers.chronoStorm = true
   return next
+}
+
+function shieldPieces(state: GameState, color: Color, types: Array<'soldier' | 'chariot'>) {
+  for (let rank = 0; rank < 10; rank += 1) {
+    for (let file = 0; file < 9; file += 1) {
+      const piece = state.board[rank][file]
+      if (piece?.color === color && types.includes(piece.type as 'soldier' | 'chariot')) {
+        piece.shield = (piece.shield ?? 0) + 1
+      }
+    }
+  }
 }
 
 function shieldPalaceCore(state: GameState, color: Color) {
@@ -86,7 +104,8 @@ function shieldAroundGeneral(state: GameState, color: Color) {
 
 function spendEnergy(state: GameState, color: Color, runeId: string) {
   const rune = runeById[runeId]
-  const cost = rune.energyCost ?? 0
+  const discount = state.players[color].coreAugment === 'hundred-schools' ? 1 : 0
+  const cost = Math.max(1, (rune.energyCost ?? 0) - discount)
   if (state.players[color].energy < cost) return null
   const next = cloneState(state)
   next.players[color].energy -= cost
@@ -99,8 +118,35 @@ export function activateRune(state: GameState, runeId: string, context: RuneCont
   if (runeId === 'chrono-swap') return activateSwap(state, runeId, context)
   if (runeId === 'dead-return') return activateRevive(state, runeId, context)
   if (runeId === 'hex-teleport') return activateTeleport(state, runeId, context)
+  if (runeId === 'tiger-tally') return activateTigerTally(state, runeId, context)
+  if (runeId === 'sun-bin-feint') return activateWideSwap(state, runeId, context)
   if (runeId === 'silent-engine') return spendEnergy(state, context.color, runeId) ?? state
   return state
+}
+
+function activateTigerTally(state: GameState, runeId: string, context: RuneContext) {
+  if (!context.target) return state
+  const piece = getPieceAt(state, context.target)
+  if (!isOwnPiece(piece, context.color) || !['chariot', 'horse', 'cannon'].includes(piece.type)) return state
+  const next = spendEnergy(state, context.color, runeId)
+  if (!next) return state
+  const target = getPieceAt(next, context.target)
+  if (target) target.shield = (target.shield ?? 0) + 1
+  next.message = '虎符发兵：精锐获得护阵。'
+  return next
+}
+
+function activateWideSwap(state: GameState, runeId: string, context: RuneContext) {
+  if (!context.target || !context.secondaryTarget) return state
+  const first = getPieceAt(state, context.target)
+  const second = getPieceAt(state, context.secondaryTarget)
+  if (!isOwnPiece(first, context.color) || !isOwnPiece(second, context.color)) return state
+  const next = spendEnergy(state, context.color, runeId)
+  if (!next) return state
+  setPieceAt(next.board, context.target, second)
+  setPieceAt(next.board, context.secondaryTarget, first)
+  next.message = '孙膑减灶：两军暗换其位。'
+  return isInCheck(next, context.color) ? state : next
 }
 
 function activateShield(state: GameState, runeId: string, context: RuneContext) {
