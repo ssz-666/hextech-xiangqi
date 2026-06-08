@@ -13,6 +13,7 @@ import {
 } from '..'
 import { applyDraftRune, generateDraftPool, RUNE_BUDGET, RUNE_SLOTS } from '../../runes'
 import { chooseAiMove } from '../../ai/minimax'
+import { toXiangqiFen } from '../../ai/fairyStockfish'
 
 function piece(id: string, color: 'red' | 'black', type: Piece['type']): Piece {
   return { id, color, type }
@@ -118,5 +119,12 @@ describe('runes and AI', () => {
     expect(move).toBeTruthy()
     expect(allLegalMoves(state).some((legal) => legal.notation === move?.notation)).toBe(true)
     if (move) expect(applyMove(state, move).turn).toBe('black')
+  })
+
+  it('exports Xiangqi FEN for Fairy-Stockfish', () => {
+    const state = createInitialState()
+    state.phase = 'playing'
+    state.turn = 'black'
+    expect(toXiangqiFen(state)).toBe('rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR b - - 0 1')
   })
 })

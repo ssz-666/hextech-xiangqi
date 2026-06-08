@@ -14,6 +14,7 @@ import {
   type Square,
 } from '../engine'
 import { chooseAiMove, maybeUseAiRune, type AiDifficulty } from '../ai/minimax'
+import { chooseFairyStockfishMove } from '../ai/fairyStockfish'
 import {
   DRAFT_POOL_SIZE,
   RUNE_SLOTS,
@@ -37,6 +38,7 @@ interface GameStore {
   legalMoves: Move[]
   activeRune: string | null
   muted: boolean
+  aiEngine: 'fairy-stockfish' | 'minimax'
   startNewGame: (mode?: GameMode) => void
   setMode: (mode: GameMode) => void
   setDifficulty: (difficulty: AiDifficulty) => void
@@ -89,6 +91,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   legalMoves: [],
   activeRune: null,
   muted: false,
+  aiEngine: 'minimax',
 
   startNewGame: (mode) =>
     set((current) => ({
@@ -184,8 +187,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const current = get()
     if (current.mode !== 'ai' || current.state.phase !== 'playing' || current.state.turn !== 'black') return
     const runeState = maybeUseAiRune(current.state)
-    const move = chooseAiMove(runeState, current.aiDifficulty)
-    if (!move) return
-    set({ state: finalizeStatus(applyMove(runeState, move)), selected: null, legalMoves: [], activeRune: null })
+    void chooseFairyStockfishMove(runeState, current.aiDifficulty)
+      .then((strongMove) => {
+        const latest = get()
+        if (latest.mode !== 'ai' || latest.state.phase !== 'playing' || latest.state.turn !== 'black') return
+        const move = strongMove ?? chooseAiMove(runeState, current.aiDifficulty)
+        if (!move) return
+        set({
+          state: finalizeStatus(applyMove(runeState, move)),
+          selected: null,
+          legalMoves: [],
+          activeRune: null,
+          aiEngine: strongMove ? 'fairy-stockfish' : 'minimax',
+        })
+      })
+      .catch(() => {
+        const latest = get()
+        if (latest.mode !== 'ai' || latest.state.phase !== 'playing' || latest.state.turn !== 'black') return
+        const move = chooseAiMove(runeState, current.aiDifficulty)
+        if (!move) return
+        set({
+          state: finalizeStatus(applyMove(runeState, move)),
+          selected: null,
+          legalMoves: [],
+          activeRune: null,
+          aiEngine: 'minimax',
+        })
+      })
   },
 }))

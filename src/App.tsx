@@ -258,7 +258,7 @@ function RuneHand() {
 }
 
 function Controls() {
-  const { state, mode, aiDifficulty, muted, setMode, setDifficulty, startNewGame, undo, resign, toggleMute } = useGameStore()
+  const { state, mode, aiDifficulty, muted, aiEngine, setMode, setDifficulty, startNewGame, undo, resign, toggleMute } = useGameStore()
   return (
     <section className="hex-panel rounded-lg p-4">
       <div className="grid grid-cols-2 gap-2">
@@ -293,7 +293,7 @@ function Controls() {
         </button>
       </div>
       <p className="mt-4 text-sm text-parchment/60">
-        可用符文池：{runes.length} 张 · 纯前端静态运行
+        可用符文池：{runes.length} 张 · AI：{aiEngine === 'fairy-stockfish' ? 'Fairy-Stockfish' : '内置回退'}
       </p>
     </section>
   )

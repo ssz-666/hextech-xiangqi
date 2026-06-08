@@ -23,7 +23,7 @@ npm run build
 - 双方各有 3 个符文位和 9 点预算。
 - 对局开始后红方先行；每个行动方回合开始获得 1 点能量，上限 10。
 - 被动符文在征召后生效，主动符文需要消耗能量并选择目标。
-- 支持本地双人和人机对战；AI 使用 minimax + alpha-beta，并会按启发式使用符文。
+- 支持本地双人和人机对战；AI 优先使用 Fairy-Stockfish Xiangqi WASM 强引擎，失败时回退到内置 minimax + alpha-beta。
 
 ## 已实现规则
 
@@ -49,6 +49,8 @@ npm run build
 ## 部署到 GitHub Pages
 
 仓库包含 `.github/workflows/deploy.yml`。推送到 `main` 后会自动安装依赖、测试、构建并发布 `dist/`。
+
+强引擎依赖 `SharedArrayBuffer`。项目已包含 `coi-serviceworker`，用于在 GitHub Pages 这类静态托管环境中启用 cross-origin isolation；首次访问可能会注册 Service Worker 并自动刷新一次。如果浏览器或托管环境不支持，游戏会自动回退到内置 AI。
 
 如果使用自定义域名，`vite.config.ts` 的 `base` 保持 `/`，并把域名写入 `public/CNAME`。
 
@@ -76,3 +78,9 @@ base: '/仓库名/'
 ## 素材说明
 
 项目资源放在 `public/assets/`，当前版本使用本地 SVG 资产实现 Logo、玩家头像、结算背景和 UI 纹理，不依赖任何运行时外部图片请求。
+
+## AI 引擎与许可证
+
+- 强引擎：`fairy-stockfish-nnue.wasm`，GPL-3.0，运行时资源位于 `public/fairy-stockfish/`。
+- Cross-origin isolation：`coi-serviceworker`，MIT，资源位于 `public/coi-serviceworker.min.js`。
+- 因为 Fairy-Stockfish 是 GPL-3.0，本项目分发时应保持源码可获得，并遵守 GPL-3.0 兼容要求。
