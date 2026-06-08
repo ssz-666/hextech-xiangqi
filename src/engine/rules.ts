@@ -212,11 +212,13 @@ export function applyMove(state: GameState, move: Move): GameState {
   const moving = getPieceAt(next, move.from)
   if (!moving) return state
   const captured = getPieceAt(next, move.to)
-  setPieceAt(next.board, move.from, null)
+  let recordedCapture = captured ?? undefined
   if (captured?.shield && captured.shield > 0) {
+    recordedCapture = undefined
     setPieceAt(next.board, move.to, { ...captured, shield: captured.shield - 1 })
     next.message = '护盾吸收了这次击破。'
   } else {
+    setPieceAt(next.board, move.from, null)
     setPieceAt(next.board, move.to, moving)
     if (captured) {
       next.players[moving.color].captured.push(captured)
@@ -225,7 +227,7 @@ export function applyMove(state: GameState, move: Move): GameState {
       }
     }
   }
-  next.history = [...next.history, { ...move, captured: captured ?? undefined, turn: state.turn, stateBefore: state }]
+  next.history = [...next.history, { ...move, captured: recordedCapture, turn: state.turn, stateBefore: state }]
   next.turn = opposite(state.turn)
   next.moveNumber = state.turn === 'black' ? state.moveNumber + 1 : state.moveNumber
   next.players[next.turn].energy = Math.min(MAX_ENERGY, next.players[next.turn].energy + 1)

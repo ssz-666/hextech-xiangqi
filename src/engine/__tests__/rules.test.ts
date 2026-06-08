@@ -50,6 +50,41 @@ describe('xiangqi engine', () => {
     expect(getLegalMoves(runeState, { file: 4, rank: 4 }).some((move) => move.to.file === 3 && move.to.rank === 2)).toBe(true)
   })
 
+  it('moves a horse onto an unshielded captured soldier', () => {
+    const state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [3, 5, piece('h', 'red', 'horse')],
+      [4, 3, piece('target', 'black', 'soldier')],
+    )
+    const move = getLegalMoves(state, { file: 3, rank: 5 }).find((candidate) => candidate.to.file === 4 && candidate.to.rank === 3)
+    expect(move).toBeTruthy()
+    const next = applyMove(state, move!)
+    expect(next.board[5][3]).toBeNull()
+    expect(next.board[3][4]?.id).toBe('h')
+    expect(next.players.red.captured.map((captured) => captured.id)).toContain('target')
+  })
+
+  it('keeps the attacker in place when a shield absorbs a capture', () => {
+    const shieldedSoldier = piece('target', 'black', 'soldier')
+    shieldedSoldier.shield = 1
+    const state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [3, 5, piece('h', 'red', 'horse')],
+      [4, 3, shieldedSoldier],
+    )
+    const move = getLegalMoves(state, { file: 3, rank: 5 }).find((candidate) => candidate.to.file === 4 && candidate.to.rank === 3)
+    expect(move).toBeTruthy()
+    const next = applyMove(state, move!)
+    expect(next.board[5][3]?.id).toBe('h')
+    expect(next.board[3][4]?.id).toBe('target')
+    expect(next.board[3][4]?.shield).toBe(0)
+    expect(next.players.red.captured).toHaveLength(0)
+  })
+
   it('enforces elephant eye and river rules', () => {
     const state = stateWith(
       [4, 9, piece('rg', 'red', 'general')],
