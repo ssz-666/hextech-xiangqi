@@ -11,6 +11,7 @@ import {
   type Square,
 } from '../engine'
 import { canAffordRune, isOwnPiece, runeById, type RuneContext } from './definitions'
+import { coreAugmentById } from './definitions'
 
 export function applyDraftRune(state: GameState, color: Color, runeId: string): GameState {
   const rune = runeById[runeId]
@@ -27,6 +28,34 @@ export function applyDraftRune(state: GameState, color: Color, runeId: string): 
   if (runeId === 'last-stand') shieldGeneral(next, color)
 
   return next
+}
+
+export function applyCoreAugment(state: GameState, color: Color, augmentId: string): GameState {
+  const augment = coreAugmentById[augmentId]
+  if (!augment || state.players[color].coreAugment) return state
+  const next = cloneState(state)
+  next.players[color].coreAugment = augmentId
+  if (augmentId === 'golden-aegis') shieldPalaceCore(next, color)
+  if (augmentId === 'singularity-gates') {
+    const existing = next.modifiers.portals.some((portal) => portal.a.file === 2 && portal.a.rank === 4)
+    if (!existing) {
+      next.modifiers.portals.push({ a: { file: 2, rank: 4 }, b: { file: 6, rank: 5 } })
+      next.modifiers.portals.push({ a: { file: 6, rank: 4 }, b: { file: 2, rank: 5 } })
+    }
+  }
+  if (augmentId === 'chrono-storm') next.modifiers.chronoStorm = true
+  return next
+}
+
+function shieldPalaceCore(state: GameState, color: Color) {
+  for (let rank = 0; rank < 10; rank += 1) {
+    for (let file = 0; file < 9; file += 1) {
+      const piece = state.board[rank][file]
+      if (piece?.color === color && (piece.type === 'general' || piece.type === 'advisor')) {
+        piece.shield = (piece.shield ?? 0) + 1
+      }
+    }
+  }
 }
 
 function shieldGeneral(state: GameState, color: Color) {

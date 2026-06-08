@@ -26,6 +26,72 @@ export interface RuneDefinition {
 export const RUNE_BUDGET = 9
 export const RUNE_SLOTS = 3
 export const DRAFT_POOL_SIZE = 8
+export const CORE_POOL_SIZE = 3
+
+export interface CoreAugmentDefinition {
+  id: string
+  name: string
+  risk: 'low' | 'medium' | 'high'
+  description: string
+  balance: string
+  flavor: string
+}
+
+export const coreAugments: CoreAugmentDefinition[] = [
+  {
+    id: 'chrono-storm',
+    name: '时流风暴',
+    risk: 'medium',
+    description: '双方所有马免疫蹩马腿；每方每回合第一次走马后，当前方获得 1 能量。',
+    balance: '完全对称，强化机动但不直接吃子或将死。',
+    flavor: '整张棋盘被调快半拍，马蹄声先于影子抵达。',
+  },
+  {
+    id: 'river-reactor',
+    name: '河界反应堆',
+    risk: 'medium',
+    description: '双方兵/卒过河后横走或前进吃子时额外获得 1 能量。',
+    balance: '鼓励推进与交锋，收益来自公开的过河兵线。',
+    flavor: '楚河汉界不再分隔战场，而是给渡河者充能。',
+  },
+  {
+    id: 'quantum-anchor',
+    name: '量子锚点',
+    risk: 'high',
+    description: '双方第一枚被吃掉的非将/帅棋子会立刻回到己方底线最近空点。',
+    balance: '双方各触发一次，只保护第一次损失，不能复活将/帅。',
+    flavor: '第一场牺牲会被锚点记住，然后被温柔地拖回现实。',
+  },
+  {
+    id: 'arcane-tithe',
+    name: '奥术什一税',
+    risk: 'medium',
+    description: '双方每次吃子时，若攻击方能量少于防守方，攻击方额外获得 1 能量。',
+    balance: '追赶机制，避免滚雪球，只奖励落后方主动交换。',
+    flavor: '海克斯秩序向优势者征税，把火花还给挑战者。',
+  },
+  {
+    id: 'golden-aegis',
+    name: '黄金庇护',
+    risk: 'low',
+    description: '双方将/帅和两个士/仕开局获得 1 层护盾。',
+    balance: '增强防守，减缓速杀，不提升主动进攻。',
+    flavor: '王城亮起金色护栏，进攻必须多回答一个问题。',
+  },
+  {
+    id: 'singularity-gates',
+    name: '奇点双门',
+    risk: 'high',
+    description: '棋盘中央生成两对公开传送门，双方都可利用。',
+    balance: '对称公共地形，增加战术路线但不偏向任一方。',
+    flavor: '棋盘折起两个角，远处突然变得很近。',
+  },
+]
+
+export const coreAugmentById = Object.fromEntries(coreAugments.map((augment) => [augment.id, augment])) as Record<
+  string,
+  CoreAugmentDefinition
+>
 
 export const runes: RuneDefinition[] = [
   {
@@ -259,6 +325,15 @@ export function generateDraftPool(seed = Date.now(), count = DRAFT_POOL_SIZE): R
     .sort(() => random() - 0.5)
     .slice(0, count)
     .sort((a, b) => a.points - b.points || a.name.localeCompare(b.name, 'zh-Hans-CN'))
+}
+
+export function generateCorePool(seed = Date.now(), count = CORE_POOL_SIZE): CoreAugmentDefinition[] {
+  let value = (seed + 7919) % 2147483647
+  const random = () => {
+    value = (value * 48271) % 2147483647
+    return value / 2147483647
+  }
+  return [...coreAugments].sort(() => random() - 0.5).slice(0, count)
 }
 
 export function canAffordRune(state: GameState, color: Color, rune: RuneDefinition) {

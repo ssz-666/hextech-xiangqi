@@ -104,7 +104,7 @@ export function createInitialState(): GameState {
       red: { energy: 0, runes: [], captured: [], budgetUsed: 0 },
       black: { energy: 0, runes: [], captured: [], budgetUsed: 0 },
     },
-    modifiers: { portals: [], elephantRiftFiles: { red: [], black: [] } },
+    modifiers: { portals: [], elephantRiftFiles: { red: [], black: [] }, chronoStorm: false },
     history: [],
     phase: 'draft',
     result: 'playing',
@@ -137,6 +137,7 @@ export function cloneState(state: GameState): GameState {
         red: [...(state.modifiers.elephantRiftFiles.red ?? [])],
         black: [...(state.modifiers.elephantRiftFiles.black ?? [])],
       },
+      chronoStorm: state.modifiers.chronoStorm,
     },
     history: [...state.history],
   }

@@ -21,8 +21,11 @@ import {
   DRAFT_POOL_SIZE,
   RUNE_SLOTS,
   activateRune,
+  applyCoreAugment,
   applyDraftRune,
+  generateCorePool,
   generateDraftPool,
+  type CoreAugmentDefinition,
   runeById,
   type RuneDefinition,
 } from '../runes'
@@ -32,6 +35,8 @@ export type GameMode = 'hotseat' | 'ai'
 interface GameStore {
   state: GameState
   draftPool: RuneDefinition[]
+  corePool: CoreAugmentDefinition[]
+  draftStage: 'core' | 'runes'
   draftTurn: Color
   picksThisTurn: number
   mode: GameMode
@@ -46,6 +51,7 @@ interface GameStore {
   setMode: (mode: GameMode) => void
   setDifficulty: (difficulty: AiDifficulty) => void
   pickRune: (runeId: string) => void
+  pickCoreAugment: (augmentId: string) => void
   clickSquare: (square: Square) => void
   activateActiveRune: (runeId: string) => void
   resign: () => void
@@ -86,6 +92,8 @@ function beginPlaying(state: GameState): GameState {
 export const useGameStore = create<GameStore>((set, get) => ({
   state: createInitialState(),
   draftPool: generateDraftPool(20260608, DRAFT_POOL_SIZE),
+  corePool: generateCorePool(20260608),
+  draftStage: 'core',
   draftTurn: 'red',
   picksThisTurn: 0,
   mode: 'ai',
@@ -101,6 +109,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set((current) => ({
       state: createInitialState(),
       draftPool: generateDraftPool(Date.now(), DRAFT_POOL_SIZE),
+      corePool: generateCorePool(Date.now()),
+      draftStage: 'core',
       draftTurn: 'red',
       picksThisTurn: 0,
       mode: mode ?? current.mode,
@@ -114,9 +124,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setDifficulty: (aiDifficulty) => set({ aiDifficulty }),
   toggleMute: () => set((state) => ({ muted: !state.muted })),
 
+  pickCoreAugment: (augmentId) => {
+    const current = get()
+    if (current.state.phase !== 'draft' || current.draftStage !== 'core') return
+    const nextState = applyCoreAugment(current.state, current.draftTurn, augmentId)
+    if (nextState === current.state) return
+    const bothPicked = Boolean(nextState.players.red.coreAugment && nextState.players.black.coreAugment)
+    set({
+      state: nextState,
+      draftStage: bothPicked ? 'runes' : 'core',
+      draftTurn: bothPicked ? 'red' : opposite(current.draftTurn),
+      picksThisTurn: 0,
+    })
+  },
+
   pickRune: (runeId) => {
     const current = get()
-    if (current.state.phase !== 'draft') return
+    if (current.state.phase !== 'draft' || current.draftStage !== 'runes') return
     const rune = runeById[runeId]
     if (!rune) return
     let nextState = applyDraftRune(current.state, current.draftTurn, runeId)

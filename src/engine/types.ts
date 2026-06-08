@@ -40,8 +40,11 @@ export interface MoveRecord extends Move {
 export interface PlayerState {
   energy: number
   runes: string[]
+  coreAugment?: string
   captured: Piece[]
   budgetUsed: number
+  revivedOnce?: boolean
+  overdriveUsed?: boolean
 }
 
 export interface PortalPair {
@@ -52,6 +55,7 @@ export interface PortalPair {
 export interface BoardModifierState {
   portals: PortalPair[]
   elephantRiftFiles: Partial<Record<Color, number[]>>
+  chronoStorm?: boolean
 }
 
 export interface EngineHooks {

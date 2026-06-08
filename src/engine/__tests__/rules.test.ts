@@ -12,6 +12,7 @@ import {
   type Piece,
 } from '..'
 import { applyDraftRune, generateDraftPool, RUNE_BUDGET, RUNE_SLOTS } from '../../runes'
+import { applyCoreAugment, generateCorePool } from '../../runes'
 import { chooseAiMove } from '../../ai/minimax'
 import { toXiangqiFen } from '../../ai/fairyStockfish'
 
@@ -137,6 +138,41 @@ describe('xiangqi engine', () => {
 })
 
 describe('runes and AI', () => {
+  it('offers three mirrored global core augments', () => {
+    const pool = generateCorePool(99)
+    expect(pool).toHaveLength(3)
+    expect(generateCorePool(99).map((augment) => augment.id)).toEqual(pool.map((augment) => augment.id))
+  })
+
+  it('applies chrono storm as a symmetric global horse rule', () => {
+    const state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [4, 4, piece('h', 'red', 'horse')],
+      [4, 3, piece('leg', 'red', 'soldier')],
+    )
+    expect(getLegalMoves(state, { file: 4, rank: 4 }).some((move) => move.to.file === 3 && move.to.rank === 2)).toBe(false)
+    const next = applyCoreAugment(state, 'red', 'chrono-storm')
+    expect(getLegalMoves(next, { file: 4, rank: 4 }).some((move) => move.to.file === 3 && move.to.rank === 2)).toBe(true)
+  })
+
+  it('revives the first non-general loss with quantum anchor', () => {
+    let state = stateWith(
+      [4, 9, piece('rg', 'red', 'general')],
+      [4, 0, piece('bg', 'black', 'general')],
+      [4, 5, piece('screen', 'red', 'soldier')],
+      [3, 5, piece('h', 'red', 'horse')],
+      [4, 3, piece('target', 'black', 'soldier')],
+    )
+    state = applyCoreAugment(state, 'black', 'quantum-anchor')
+    const move = getLegalMoves(state, { file: 3, rank: 5 }).find((candidate) => candidate.to.file === 4 && candidate.to.rank === 3)
+    expect(move).toBeTruthy()
+    const next = applyMove(state, move!)
+    expect(next.players.black.revivedOnce).toBe(true)
+    expect(next.board[0].some((piece) => piece?.id === 'target')).toBe(true)
+  })
+
   it('generates a mirrored draft pool and respects budget', () => {
     const pool = generateDraftPool(42)
     expect(pool).toHaveLength(8)

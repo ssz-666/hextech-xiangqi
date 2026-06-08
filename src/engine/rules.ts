@@ -129,7 +129,10 @@ export function getPseudoMoves(state: GameState, from: Square): Move[] {
       { df: -2, dr: -1, leg: { file: -1, rank: 0 } },
     ]
     for (const jump of jumps) {
-      const ignoresLeg = state.players[piece.color].runes.includes('untamed-horse')
+      const ignoresLeg =
+        state.players[piece.color].runes.includes('untamed-horse') ||
+        state.players.red.coreAugment === 'chrono-storm' ||
+        state.players.black.coreAugment === 'chrono-storm'
       const leg = { file: from.file + jump.leg.file, rank: from.rank + jump.leg.rank }
       const to = { file: from.file + jump.df, rank: from.rank + jump.dr }
       if ((ignoresLeg || !getPieceAt(state, leg)) && inBounds(to)) pushIfAvailable(state, from, to, piece, moves)
@@ -222,9 +225,23 @@ export function applyMove(state: GameState, move: Move): GameState {
     setPieceAt(next.board, move.to, moving)
     if (captured) {
       next.players[moving.color].captured.push(captured)
+      if (
+        next.players[moving.color].coreAugment === 'river-reactor' &&
+        moving.type === 'soldier' &&
+        ((moving.color === 'red' && move.from.rank <= 4) || (moving.color === 'black' && move.from.rank >= 5))
+      ) {
+        next.players[moving.color].energy = Math.min(MAX_ENERGY, next.players[moving.color].energy + 1)
+      }
+      if (
+        (next.players.red.coreAugment === 'arcane-tithe' || next.players.black.coreAugment === 'arcane-tithe') &&
+        next.players[moving.color].energy < next.players[opposite(moving.color)].energy
+      ) {
+        next.players[moving.color].energy = Math.min(MAX_ENERGY, next.players[moving.color].energy + 1)
+      }
       if (next.players[moving.color].runes.includes('rally-call')) {
         next.players[moving.color].energy = Math.min(MAX_ENERGY, next.players[moving.color].energy + 1)
       }
+      tryCoreRevive(next, captured, move.to)
     }
   }
   next.history = [...next.history, { ...move, captured: recordedCapture, turn: state.turn, stateBefore: state }]
@@ -234,6 +251,18 @@ export function applyMove(state: GameState, move: Move): GameState {
   if (next.hooks?.afterApplyMove) next = next.hooks.afterApplyMove(next, move)
   if (next.hooks?.onTurnStart) next = next.hooks.onTurnStart(next, next.turn)
   return next
+}
+
+function tryCoreRevive(state: GameState, captured: Piece, capturedAt: Square) {
+  const owner = captured.color
+  if (captured.type === 'general' || state.players[owner].coreAugment !== 'quantum-anchor' || state.players[owner].revivedOnce) return
+  const homeRank = owner === 'red' ? 9 : 0
+  const candidateFiles = [capturedAt.file, 4, 3, 5, 2, 6, 1, 7, 0, 8]
+  const file = candidateFiles.find((candidate) => !getPieceAt(state, { file: candidate, rank: homeRank }))
+  if (file === undefined) return
+  setPieceAt(state.board, { file, rank: homeRank }, { ...captured, shield: 0 })
+  state.players[owner].revivedOnce = true
+  state.message = '量子锚点触发：首个阵亡棋子回到底线。'
 }
 
 function leavesOwnGeneralSafe(state: GameState, move: Move) {

@@ -11,7 +11,7 @@ import {
   type Color,
   type Square,
 } from './engine'
-import { runeById, runes } from './runes'
+import { coreAugmentById, runeById, runes } from './runes'
 import { useGameStore, type GameMode } from './store/gameStore'
 import './index.css'
 
@@ -57,6 +57,11 @@ function PlayerPanel({ color }: { color: Color }) {
         />
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
+        {player.coreAugment && (
+          <span className="rounded border border-fuchsia-300/50 px-2 py-1 text-xs text-fuchsia-100">
+            {coreAugmentById[player.coreAugment]?.name}
+          </span>
+        )}
         {player.runes.map((id) => (
           <span key={id} className="rounded border border-hexgold/35 px-2 py-1 text-xs text-parchment/80">
             {runeById[id]?.name}
@@ -68,52 +73,91 @@ function PlayerPanel({ color }: { color: Color }) {
 }
 
 function DraftScreen() {
-  const { state, draftPool, draftTurn, pickRune } = useGameStore()
+  const { state, draftPool, corePool, draftStage, draftTurn, pickRune, pickCoreAugment } = useGameStore()
   return (
     <section className="hex-panel rounded-lg p-4 lg:p-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="font-display text-sm uppercase tracking-[0.24em] text-hexcyan">Mirror Ban/Pick</p>
-          <h2 className="font-display text-3xl text-parchment">海克斯符文征召</h2>
+          <p className="font-display text-sm uppercase tracking-[0.24em] text-hexcyan">
+            {draftStage === 'core' ? 'Core Augment' : 'Mirror Ban/Pick'}
+          </p>
+          <h2 className="font-display text-3xl text-parchment">
+            {draftStage === 'core' ? '全局海克斯三选一' : '海克斯符文征召'}
+          </h2>
         </div>
         <p className="text-parchment/70">
           当前选择：<span className="text-hexgold">{colorLabel[draftTurn]}</span>
         </p>
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {draftPool.map((rune) => {
-          const takenBy = (['red', 'black'] as const).find((color) => state.players[color].runes.includes(rune.id))
-          const affordable =
-            !takenBy &&
-            state.players[draftTurn].runes.length < 3 &&
-            state.players[draftTurn].budgetUsed + rune.points <= 9
-          return (
-            <motion.button
-              key={rune.id}
-              type="button"
-              disabled={!affordable}
-              onClick={() => pickRune(rune.id)}
-              whileHover={{ rotateX: affordable ? 4 : 0 }}
-              className={clsx(
-                'min-h-48 rounded-lg border bg-gradient-to-br p-4 text-left transition',
-                rarityClass[rune.rarity],
-                affordable ? 'hover:shadow-gold' : 'opacity-45',
-              )}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-display text-xl text-parchment">{rune.name}</h3>
-                  <p className="text-xs uppercase tracking-[0.22em] text-hexcyan">{rune.rarity}</p>
+      {draftStage === 'core' ? (
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {corePool.map((augment) => {
+            const takenBy = (['red', 'black'] as const).find((color) => state.players[color].coreAugment === augment.id)
+            const disabled = Boolean(state.players[draftTurn].coreAugment)
+            return (
+              <motion.button
+                key={augment.id}
+                type="button"
+                disabled={disabled}
+                onClick={() => pickCoreAugment(augment.id)}
+                whileHover={{ y: disabled ? 0 : -3 }}
+                className="min-h-64 rounded-lg border border-fuchsia-300/75 bg-gradient-to-br from-fuchsia-500/20 via-hexcyan/10 to-hexgold/15 p-5 text-left shadow-gold disabled:opacity-45"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-display text-2xl text-parchment">{augment.name}</h3>
+                    <p className="mt-1 text-xs uppercase tracking-[0.22em] text-fuchsia-200">
+                      全局规则 · {augment.risk}
+                    </p>
+                  </div>
+                  <span className="rounded border border-hexgold/60 px-2 py-1 text-sm text-hexgold">CORE</span>
                 </div>
-                <span className="rounded border border-hexgold/50 px-2 py-1 text-sm text-hexgold">{rune.points}</span>
-              </div>
-              <p className="mt-3 text-sm text-parchment/80">{rune.description}</p>
-              <p className="mt-3 text-xs italic text-parchment/50">{rune.flavor}</p>
-              {takenBy && <p className="mt-3 text-sm text-hexgold">已由{colorLabel[takenBy]}选择</p>}
-            </motion.button>
-          )
-        })}
-      </div>
+                <p className="mt-4 text-base text-parchment/90">{augment.description}</p>
+                <p className="mt-4 rounded border border-hexcyan/25 bg-black/20 p-3 text-sm text-hexcyan/85">
+                  {augment.balance}
+                </p>
+                <p className="mt-4 text-sm italic text-parchment/55">{augment.flavor}</p>
+                {takenBy && <p className="mt-4 text-sm text-hexgold">{colorLabel[takenBy]}已选择</p>}
+              </motion.button>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {draftPool.map((rune) => {
+            const takenBy = (['red', 'black'] as const).find((color) => state.players[color].runes.includes(rune.id))
+            const affordable =
+              !takenBy &&
+              state.players[draftTurn].runes.length < 3 &&
+              state.players[draftTurn].budgetUsed + rune.points <= 9
+            return (
+              <motion.button
+                key={rune.id}
+                type="button"
+                disabled={!affordable}
+                onClick={() => pickRune(rune.id)}
+                whileHover={{ rotateX: affordable ? 4 : 0 }}
+                className={clsx(
+                  'min-h-48 rounded-lg border bg-gradient-to-br p-4 text-left transition',
+                  rarityClass[rune.rarity],
+                  affordable ? 'hover:shadow-gold' : 'opacity-45',
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-display text-xl text-parchment">{rune.name}</h3>
+                    <p className="text-xs uppercase tracking-[0.22em] text-hexcyan">{rune.rarity}</p>
+                  </div>
+                  <span className="rounded border border-hexgold/50 px-2 py-1 text-sm text-hexgold">{rune.points}</span>
+                </div>
+                <p className="mt-3 text-sm text-parchment/80">{rune.description}</p>
+                <p className="mt-3 text-xs italic text-parchment/50">{rune.flavor}</p>
+                {takenBy && <p className="mt-3 text-sm text-hexgold">已由{colorLabel[takenBy]}选择</p>}
+              </motion.button>
+            )
+          })}
+        </div>
+      )}
     </section>
   )
 }
