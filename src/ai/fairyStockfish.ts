@@ -107,7 +107,7 @@ function loadStockfishScript() {
   if (scriptPromise) return scriptPromise
   scriptPromise = new Promise<void>((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = '/fairy-stockfish/stockfish.js'
+    script.src = `${import.meta.env.BASE_URL}fairy-stockfish/stockfish.js`
     script.async = true
     script.onload = () => resolve()
     script.onerror = () => reject(new Error('Failed to load Fairy-Stockfish script'))

@@ -16,6 +16,7 @@ import { useGameStore, type GameMode } from './store/gameStore'
 import './index.css'
 
 const colorLabel: Record<Color, string> = { red: '红方', black: '黑方' }
+const assetUrl = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 const rarityClass = {
   silver: 'border-slate-300/70 from-slate-200/20',
   gold: 'border-hexgold/80 from-hexgold/25',
@@ -39,7 +40,7 @@ function PlayerPanel({ color }: { color: Color }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <img
-            src={`/assets/branding/${color}-avatar.svg`}
+            src={assetUrl(`/assets/branding/${color}-avatar.svg`)}
             alt={`${colorLabel[color]}头像`}
             className="h-12 w-12 rounded-full border border-hexgold/60"
           />
@@ -418,7 +419,7 @@ function App() {
       <div className="mx-auto flex max-w-[1500px] flex-col gap-4">
         <header className="hex-panel flex flex-col gap-3 rounded-lg p-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <img src="/assets/branding/logo.svg" alt="海克斯象棋" className="h-14 w-14" />
+            <img src={assetUrl('/assets/branding/logo.svg')} alt="海克斯象棋" className="h-14 w-14" />
             <div>
               <p className="font-display text-xs uppercase tracking-[0.28em] text-hexcyan">Hextech Chess</p>
               <h1 className="font-display text-3xl text-parchment sm:text-4xl">海克斯象棋</h1>
@@ -442,7 +443,7 @@ function App() {
               <motion.section
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="hex-panel rounded-lg bg-[url('/assets/ui/victory.svg')] bg-cover p-6 text-center"
+                className="hex-panel rounded-lg bg-[url('/hextech-xiangqi/assets/ui/victory.svg')] bg-cover p-6 text-center"
               >
                 <p className="font-display text-3xl text-hexgold">
                   {state.winner ? `${colorLabel[state.winner]}胜利` : '对局结束'}
