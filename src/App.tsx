@@ -41,12 +41,12 @@ function PlayerPanel({ color }: { color: Color }) {
         <div className="flex items-center gap-3">
           <img
             src={assetUrl(`/assets/branding/${color}-avatar.svg`)}
-            alt={`${colorLabel[color]}头像`}
+            alt={`${colorLabel[color]}阵营印`}
             className="h-12 w-12 rounded-full border border-hexgold/60"
           />
           <div>
             <h2 className="font-display text-lg text-parchment">{colorLabel[color]}</h2>
-            <p className="text-sm text-parchment/60">{player.runes.length}/3 符文 · {player.budgetUsed}/9 点</p>
+            <p className="text-sm text-parchment/60">{player.runes.length}/3 机策 · {player.budgetUsed}/9 点</p>
           </div>
         </div>
         <div className="text-right font-display text-2xl text-hexcyan">{player.energy}</div>
@@ -86,14 +86,14 @@ function DraftScreen() {
       <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="font-display text-sm uppercase tracking-[0.24em] text-hexcyan">
-            {draftStage === 'core' ? 'Core Augment' : 'Mirror Ban/Pick'}
+            {draftStage === 'core' ? 'TIANGONG STATECRAFT' : 'CHU-HAN STRATAGEMS'}
           </p>
           <h2 className="font-display text-3xl text-parchment">
-            {draftStage === 'core' ? '全局海克斯三选一' : '海克斯符文征召'}
+            {draftStage === 'core' ? '天工国策三选一' : '兵书机策征召'}
           </h2>
         </div>
         <p className="text-parchment/70">
-          当前选择：<span className="text-hexgold">{colorLabel[draftTurn]}</span>
+          当前执策：<span className="text-hexgold">{colorLabel[draftTurn]}</span>
         </p>
       </div>
       {draftStage === 'core' ? (
@@ -108,23 +108,23 @@ function DraftScreen() {
                 disabled={disabled}
                 onClick={() => pickCoreAugment(augment.id)}
                 whileHover={{ y: disabled ? 0 : -3 }}
-                className="min-h-64 rounded-lg border border-fuchsia-300/75 bg-gradient-to-br from-fuchsia-500/20 via-hexcyan/10 to-hexgold/15 p-5 text-left shadow-gold disabled:opacity-45"
+                className="min-h-64 rounded-lg border border-hexgold/70 bg-gradient-to-br from-hexgold/20 via-hexcyan/10 to-crimson/10 p-5 text-left shadow-gold disabled:opacity-45"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-display text-2xl text-parchment">{augment.name}</h3>
                     <p className="mt-1 text-xs uppercase tracking-[0.22em] text-fuchsia-200">
-                      全局规则 · {augment.risk}
+                      国策 · {augment.risk}
                     </p>
                   </div>
-                  <span className="rounded border border-hexgold/60 px-2 py-1 text-sm text-hexgold">CORE</span>
+                  <span className="rounded border border-hexgold/60 px-2 py-1 text-sm text-hexgold">国策</span>
                 </div>
                 <p className="mt-4 text-base text-parchment/90">{augment.description}</p>
                 <p className="mt-4 rounded border border-hexcyan/25 bg-black/20 p-3 text-sm text-hexcyan/85">
                   {augment.balance}
                 </p>
                 <p className="mt-4 text-sm italic text-parchment/55">{augment.flavor}</p>
-                {takenBy && <p className="mt-4 text-sm text-hexgold">{colorLabel[takenBy]}已选择</p>}
+                {takenBy && <p className="mt-4 text-sm text-hexgold">{colorLabel[takenBy]}已立策</p>}
               </motion.button>
             )
           })}
@@ -159,7 +159,7 @@ function DraftScreen() {
                 </div>
                 <p className="mt-3 text-sm text-parchment/80">{rune.description}</p>
                 <p className="mt-3 text-xs italic text-parchment/50">{rune.flavor}</p>
-                {takenBy && <p className="mt-3 text-sm text-hexgold">已由{colorLabel[takenBy]}选择</p>}
+                {takenBy && <p className="mt-3 text-sm text-hexgold">已由{colorLabel[takenBy]}取策</p>}
               </motion.button>
             )
           })}
@@ -313,7 +313,7 @@ function RuneHand() {
 
   return (
     <section className="hex-panel rounded-lg p-4">
-      <h2 className="font-display text-xl text-parchment">当前符文</h2>
+      <h2 className="font-display text-xl text-parchment">当前机策</h2>
       <div className="mt-3 grid gap-2">
         {currentRunes.map((rune) => (
           <button
@@ -329,13 +329,13 @@ function RuneHand() {
           >
             <div className="flex justify-between gap-3">
               <span className="font-display text-parchment">{rune.name}</span>
-              <span className="text-hexgold">{rune.energyCost ? `${rune.energyCost}E` : '被动'}</span>
+              <span className="text-hexgold">{rune.energyCost ? `${rune.energyCost} 势` : '常策'}</span>
             </div>
             <p className="mt-1 text-xs text-parchment/65">{rune.description}</p>
           </button>
         ))}
       </div>
-      {activeRune && <p className="mt-3 text-sm text-hexcyan">选择目标格以释放：{runeById[activeRune].name}</p>}
+      {activeRune && <p className="mt-3 text-sm text-hexcyan">选择落点以施策：{runeById[activeRune].name}</p>}
     </section>
   )
 }
@@ -376,7 +376,7 @@ function Controls() {
         </button>
       </div>
       <p className="mt-4 text-sm text-parchment/60">
-        可用符文池：{runes.length} 张 · AI：{aiThinking ? '思考中...' : aiEngine === 'fairy-stockfish' ? 'Fairy-Stockfish' : '内置回退'}
+        可用机策：{runes.length} 卷 · AI：{aiThinking ? '推演中...' : aiEngine === 'fairy-stockfish' ? 'Fairy-Stockfish' : '内置推演'}
       </p>
     </section>
   )
@@ -419,14 +419,14 @@ function App() {
       <div className="mx-auto flex max-w-[1500px] flex-col gap-4">
         <header className="hex-panel flex flex-col gap-3 rounded-lg p-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <img src={assetUrl('/assets/branding/logo.svg')} alt="海克斯象棋" className="h-14 w-14" />
+            <img src={assetUrl('/assets/branding/logo.svg')} alt="天工楚汉棋" className="h-14 w-14" />
             <div>
-              <p className="font-display text-xs uppercase tracking-[0.28em] text-hexcyan">Hextech Chess</p>
-              <h1 className="font-display text-3xl text-parchment sm:text-4xl">海克斯象棋</h1>
+              <p className="font-display text-xs uppercase tracking-[0.28em] text-hexcyan">TIANGONG CHU-HAN</p>
+              <h1 className="font-display text-3xl text-parchment sm:text-4xl">天工楚汉棋</h1>
             </div>
           </div>
           <div className="text-left md:text-right">
-            <p className="font-display text-xl text-hexgold">{state.phase === 'draft' ? '符文征召' : colorLabel[state.turn]}</p>
+            <p className="font-display text-xl text-hexgold">{state.phase === 'draft' ? '机策征召' : colorLabel[state.turn]}</p>
             <p className="text-parchment/70">{state.message}</p>
           </div>
         </header>

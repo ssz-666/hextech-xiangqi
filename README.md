@@ -1,6 +1,8 @@
-# 海克斯象棋 Hextech Chess
+# 天工楚汉棋
 
-海克斯象棋是一款纯前端网页游戏：以标准中国象棋为规则骨架，加入中国历史/兵法风格的海克斯增强、对称随机征召、能量经济、主动技能、本地双人热座和人机 AI。
+天工楚汉棋是一款纯前端网页游戏：以标准中国象棋为规则骨架，加入楚汉兵法、天工机关、国策三选一、机策征召、能量经济、本地双人与人机 AI。
+
+在线试玩：https://ssz-666.github.io/hextech-xiangqi/
 
 ## 本地运行
 
@@ -19,13 +21,13 @@ npm run build
 
 ## 玩法概览
 
-- 开局先进入“全局海克斯核心”三选一：系统会从更大的全局海克斯池里每局随机 3 个候选，双方看到同一组并各选一个，例如“胡服骑射”“兵马俑魂”“都江堰”“强弩都尉”。
-- 随后进入镜像符文征召：双方看到同一候选池，按蛇形顺序选择符文。
-- 双方各有 3 个符文位和 9 点预算。
-- 对局开始后红方先行；每个行动方回合开始获得 1 点能量，上限 10。
-- 被动符文在征召后生效，主动符文需要消耗能量并选择目标。
-- 吃子会触发斩获爆闪，将军会触发军令横幅。
-- 支持本地双人和人机对战；AI 优先使用 Fairy-Stockfish Xiangqi WASM 强引擎，失败时回退到内置 minimax + alpha-beta。
+- 开局先进入“天工国策三选一”：系统从更大的国策池里每局随机 3 个候选，双方看到同一组并各选一个。
+- 随后进入“兵书机策征召”：双方共享同一候选池，按蛇形顺序选择机策。
+- 双方各有 3 个机策位和 9 点预算。
+- 对局开始后红方先行；每个行动方回合开始获得 1 点势能，上限 10。
+- 常策在征召后生效，主动机策需要消耗势能并选择目标。
+- 吃子会触发“斩获”反馈，将军会触发军令横幅。
+- 支持本地双人与人机对战；AI 会结合标准象棋引擎与天工机策权重评估局面。
 
 ## 已实现规则
 
@@ -35,54 +37,35 @@ npm run build
 - 将/帅、士/仕、象/相、马/傌、车/俥、炮/砲、卒/兵。
 - 马蹩腿、象眼、象/相不过河、炮隔山、九宫、将帅照面。
 - 将军、将死、困毙。
-- 符文 hook/modifier 扩展入口。
+- 国策与机策通过 hook/modifier 扩展，不污染基础规则。
 
-## 符文公平性
+## 公平性
 
-符文数据位于 `src/runes/definitions.ts`，平衡表位于 `src/runes/balance.md`。
-
-公平性约束：
+机策数据位于 `src/runes/definitions.ts`，平衡表位于 `src/runes/balance.md`。
 
 - 双方候选池完全相同。
-- 双方全局海克斯核心候选完全相同，但可以做不同选择。
-- 双方符文预算相同。
-- 能量增长规则对称。
-- 主动符文不能直接跳过对抗造成将死。
+- 双方国策候选完全相同，但可以做不同选择。
+- 双方机策预算相同。
+- 势能增长规则对称。
+- 主动机策不能直接跳过对抗造成将死。
 
-## 部署到 GitHub Pages
+## GitHub Pages
 
 仓库包含 `.github/workflows/deploy.yml`。推送到 `main` 后会自动安装依赖、测试、构建并发布 `dist/`。
 
-强引擎依赖 `SharedArrayBuffer`。项目已包含 `coi-serviceworker`，用于在 GitHub Pages 这类静态托管环境中启用 cross-origin isolation；首次访问可能会注册 Service Worker 并自动刷新一次。如果浏览器或托管环境不支持，游戏会自动回退到内置 AI。
-
-如果使用自定义域名，`vite.config.ts` 的 `base` 保持 `/`，并把域名写入 `public/CNAME`。
-
-如果部署到 `https://用户名.github.io/仓库名/`，把 `vite.config.ts` 中的：
+当前仓库部署在项目页路径：
 
 ```ts
-base: '/'
+base: '/hextech-xiangqi/'
 ```
 
-改为：
-
-```ts
-base: '/仓库名/'
-```
-
-## 自定义域名
-
-1. 购买域名。
-2. 将域名填入 `public/CNAME`。
-3. 在域名服务商处配置 DNS：
-   - 子域名推荐 CNAME 指向 `用户名.github.io`。
-   - 根域名可按 GitHub Pages 文档配置 A 记录。
-4. 在 GitHub 仓库 Settings → Pages 中启用 Enforce HTTPS。
+如果改成自定义域名，需要把 `vite.config.ts` 的 `base` 改回 `/`，并添加 `public/CNAME`。
 
 ## 素材说明
 
-项目资源放在 `public/assets/`，当前版本使用本地 SVG 资产实现 Logo、玩家头像、结算背景和 UI 纹理，不依赖任何运行时外部图片请求。
+资源位于 `public/assets/`。当前版本使用本地 SVG 和图片资产实现 Logo、阵营头像、结算背景与 UI 纹理，不依赖运行时外部图片 CDN。
 
-## AI 引擎与许可证
+## AI 与许可证
 
 - 强引擎：`fairy-stockfish-nnue.wasm`，GPL-3.0，运行时资源位于 `public/fairy-stockfish/`。
 - Cross-origin isolation：`coi-serviceworker`，MIT，资源位于 `public/coi-serviceworker.min.js`。

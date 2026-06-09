@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;600;700;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color: #f0e6d2;
-  background: #07111f;
+  color: #f4ead2;
+  background: #120f0b;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -22,11 +22,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    linear-gradient(rgba(7, 17, 31, 0.82), rgba(7, 17, 31, 0.9)),
+    linear-gradient(rgba(18, 15, 11, 0.8), rgba(18, 15, 11, 0.92)),
     url('/assets/ui/hextech-battlefield.png') center / cover fixed,
-    radial-gradient(circle at 20% 10%, rgba(10, 200, 185, 0.16), transparent 30rem),
-    radial-gradient(circle at 80% 0%, rgba(200, 170, 110, 0.13), transparent 26rem),
-    linear-gradient(135deg, #07111f 0%, #0a1428 45%, #07111f 100%);
+    radial-gradient(circle at 18% 12%, rgba(101, 184, 166, 0.12), transparent 28rem),
+    radial-gradient(circle at 82% 4%, rgba(196, 154, 84, 0.18), transparent 26rem),
+    linear-gradient(135deg, #120f0b 0%, #1f1710 46%, #0d1512 100%);
 }
 
 button,
@@ -35,18 +35,18 @@ select {
 }
 
 .hex-panel {
-  border: 1px solid rgba(200, 170, 110, 0.34);
+  border: 1px solid rgba(196, 154, 84, 0.42);
   background:
-    linear-gradient(135deg, rgba(10, 200, 185, 0.08), rgba(7, 17, 31, 0.9)),
-    rgba(7, 17, 31, 0.78);
-  box-shadow: 0 0 0 1px rgba(10, 200, 185, 0.12), 0 18px 48px rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(12px);
+    linear-gradient(135deg, rgba(196, 154, 84, 0.11), rgba(18, 15, 11, 0.88)),
+    rgba(20, 17, 12, 0.82);
+  box-shadow: 0 0 0 1px rgba(101, 184, 166, 0.11), 0 18px 48px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(10px);
 }
 
 .hex-button {
-  border: 1px solid rgba(200, 170, 110, 0.55);
-  background: linear-gradient(135deg, rgba(10, 200, 185, 0.2), rgba(200, 170, 110, 0.16));
-  color: #f0e6d2;
+  border: 1px solid rgba(196, 154, 84, 0.58);
+  background: linear-gradient(135deg, rgba(101, 184, 166, 0.14), rgba(196, 154, 84, 0.2));
+  color: #f4ead2;
   transition:
     transform 160ms ease,
     border-color 160ms ease,
@@ -55,8 +55,8 @@ select {
 
 .hex-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(10, 200, 185, 0.85);
-  box-shadow: 0 0 22px rgba(10, 200, 185, 0.22);
+  border-color: rgba(196, 154, 84, 0.9);
+  box-shadow: 0 0 22px rgba(196, 154, 84, 0.25);
 }
 
 .hex-button:disabled {
@@ -66,7 +66,7 @@ select {
 
 .board-grid {
   background-image:
-    linear-gradient(rgba(10, 200, 185, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(10, 200, 185, 0.08) 1px, transparent 1px);
+    linear-gradient(rgba(101, 184, 166, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 154, 84, 0.09) 1px, transparent 1px);
   background-size: 28px 28px;
 }

@@ -208,7 +208,7 @@ function activateTeleport(state: GameState, runeId: string, context: RuneContext
   setPieceAt(next.board, context.secondaryTarget, piece)
   const opponent = context.color === 'red' ? 'black' : 'red'
   if (isInCheck(next, opponent)) return state
-  next.message = '海克斯传送完成'
+  next.message = '奇门遁甲完成'
   return next
 }
 

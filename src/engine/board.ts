@@ -108,7 +108,7 @@ export function createInitialState(): GameState {
     history: [],
     phase: 'draft',
     result: 'playing',
-    message: '征召海克斯符文，随后开局。',
+    message: '征召天工国策与兵书机策，随后开局。',
   }
 }
 

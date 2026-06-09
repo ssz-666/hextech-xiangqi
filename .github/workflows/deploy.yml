@@ -1,4 +1,4 @@
-name: Deploy Hextech Chess
+name: Deploy Tiangong Chu-Han Chess
 
 on:
   push:

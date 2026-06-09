@@ -4,20 +4,20 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['Orbitron', 'Rajdhani', 'system-ui', 'sans-serif'],
-        sans: ['Rajdhani', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Noto Serif SC', 'Songti SC', 'SimSun', 'serif'],
+        sans: ['Noto Serif SC', 'Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
-        void: '#07111f',
-        hexblue: '#0397ab',
-        hexcyan: '#0ac8b9',
-        hexgold: '#c8aa6e',
-        parchment: '#f0e6d2',
-        crimson: '#d34b54',
+        void: '#120f0b',
+        hexblue: '#315f5a',
+        hexcyan: '#65b8a6',
+        hexgold: '#c49a54',
+        parchment: '#f4ead2',
+        crimson: '#b93f32',
       },
       boxShadow: {
-        glow: '0 0 24px rgba(10, 200, 185, 0.35)',
-        gold: '0 0 22px rgba(200, 170, 110, 0.36)',
+        glow: '0 0 22px rgba(101, 184, 166, 0.28)',
+        gold: '0 0 24px rgba(196, 154, 84, 0.34)',
       },
     },
   },

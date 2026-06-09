@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#07111f"/>
-  <path d="M32 6 55 19v26L32 58 9 45V19z" fill="none" stroke="#0ac8b9" stroke-width="4"/>
-  <text x="32" y="41" text-anchor="middle" font-size="26" font-family="serif" font-weight="700" fill="#c8aa6e">棋</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="天工楚汉棋">
+  <rect width="64" height="64" rx="12" fill="#120f0b"/>
+  <circle cx="32" cy="32" r="25" fill="#1b1710" stroke="#c49a54" stroke-width="4"/>
+  <path d="M16 32h32M32 16v32" stroke="#65b8a6" stroke-opacity=".45" stroke-width="3"/>
+  <text x="32" y="41" text-anchor="middle" font-size="25" font-family="serif" font-weight="800" fill="#f4ead2">天</text>
 </svg>
